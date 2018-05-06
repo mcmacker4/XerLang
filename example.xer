@@ -1,0 +1,9 @@
+
+fun main() {
+    var bar: int = 35847;
+    var foo = "Hello World";
+    var c = 'a';
+    if(bar == 3) {
+        print(boo);
+    }
+}
