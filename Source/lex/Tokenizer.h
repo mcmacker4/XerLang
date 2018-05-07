@@ -11,6 +11,8 @@
 #include <memory>
 #include <cassert>
 
+#include "../err/Exceptions.h"
+
 namespace Xer { namespace Lex {
 
     enum TokenType {

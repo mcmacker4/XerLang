@@ -7,12 +7,17 @@ using namespace Xer;
 int main() {
 
     std::ifstream stream;
-    stream.open("./example.xer", std::ifstream::in);
+    std::string fileName("./example.xer");
+    stream.open(fileName, std::ifstream::in);
     if(stream.is_open()) {
-        std::cout << "File Open: " << std::endl;
-        auto tokens = Lex::Tokenize(stream);
-        for (auto &token : tokens) {
-            std::cout << token.type << ": " << token.value << std::endl;
+        try {
+            auto tokens = Lex::Tokenize(stream);
+            for (auto &token : tokens) {
+                std::cout << token.type << ": " << token.value << std::endl;
+            }
+        } catch (Err::UnexpectedTokenException &ex) {
+            std::cout << "Unexpected Token \"" << ex.token << "\" " <<
+                      fileName << ":" << ex.line << ":" << ex.position << std::endl;
         }
     } else {
         std::cerr << "Could not open file." << std::endl;

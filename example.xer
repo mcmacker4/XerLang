@@ -1,6 +1,6 @@
 
 fun main() {
-    var bar: int = 35847;
+    var bar: int = 358.47;
     var foo = "Hello World";
     var c = 'a';
     if(bar == 3) {

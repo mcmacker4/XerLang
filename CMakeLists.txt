@@ -3,4 +3,4 @@ project(XerInterpreter)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(XerInterpreter Source/Main.cpp Source/lex/Tokenizer.cpp Source/lex/Tokenizer.h)
+add_executable(XerInterpreter Source/Main.cpp Source/lex/Tokenizer.cpp Source/lex/Tokenizer.h Source/err/Exceptions.h)

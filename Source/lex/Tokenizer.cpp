@@ -4,8 +4,6 @@
 
 #include "Tokenizer.h"
 
-#include <iostream>
-
 namespace Xer { namespace Lex {
 
     static std::map<char, char> escapes = { // NOLINT
@@ -22,52 +20,71 @@ namespace Xer { namespace Lex {
             { '?', '\?' }
     };
 
-    void IgnoreSpaces(std::ifstream &stream) {
-        std::cout << "Ignoring Whitespaces." << std::endl;
-        while(isspace(stream.peek()))
-            stream.get();
+    int IgnoreSpaces(std::string &line, int pos) {
+        while(isspace(line[pos]))
+            pos++;
+        return pos;
     }
 
-    void ReadName(std::ifstream &stream, std::string &value) {
-        assert(isalpha(stream.peek()) || stream.peek() == '_');
-        std::cout << "Reading Name" << std::endl;
-        while(isalnum(stream.peek()))
-            value += (char) stream.get();
+    int ReadName(std::string &line, int pos, std::string &value) {
+        assert(isalpha(line[pos]) || line[pos] == '_');
+        while(line[pos] == '_' || isalnum(line[pos]))
+            value += line[pos++];
+        return pos;
     }
 
-    void ReadNumber(std::ifstream &stream, std::string &value) {
-        assert(isdigit(stream.peek()));
-        std::cout << "Reading Number" << std::endl;
-        while(isdigit(stream.peek()))
-            value += (char) stream.get();
-    }
-
-    void ReadChar(std::ifstream &stream, std::string &value) {
-        assert(stream.get() == '\'');
-        std::cout << "Reading Char" << std::endl;
-        int c = stream.get();
-        if(c == '\\')
-            c = escapes[stream.get()];
-        value += (char) c;
-        assert(stream.get() == '\'');
-    }
-
-    void ReadString(std::ifstream &stream, std::string &value) {
-        assert(stream.get() == '\"');
-        std::cout << "Reading String" << std::endl;
-        while(stream.peek() != '\"') {
-            int c = stream.get();
-            if (c == '\\')
-                c = escapes[stream.get()];
-            value += (char) c;
+    int ReadNumber(std::string &line, int pos, int ln, std::string &value) {
+        assert(isdigit(line[pos]) || line[pos] == '.');
+        bool decimalPoint = false;
+        while(pos < line.length() && (isdigit(line[pos]) || line[pos] == '.')) {
+            if(line[pos] == '.') {
+                if(decimalPoint)
+                    throw Err::UnexpectedTokenException(line[pos], ln, pos + 1);
+                decimalPoint = true;
+            }
+            value += line[pos++];
         }
-        assert(stream.get() == '\"');
+        return pos;
     }
 
-    Token NextToken(std::ifstream &stream) {
-        std::cout << "Reading token." << std::endl;
+    int ReadChar(std::string &line, int pos, int ln, std::string &value) {
+        assert(line[pos] == '\'');
+        pos++;
+        char c = line[pos++];
+        if(c == '\\') {
+            try {
+                c = escapes.at(line[pos++]);
+            } catch (std::out_of_range &ex) {
+                throw Err::UnexpectedTokenException(line[pos], ln, pos + 1);
+            }
+
+        }
+        value += c;
+        assert(line[pos] == '\'');
+        return ++pos;
+    }
+
+    int ReadString(std::string &line, int pos, int ln, std::string &value) {
+        assert(line[pos] == '\"');
+        pos++;
+        while(pos < line.length() && line[pos] != '\"') {
+            char c = line[pos++];
+            if (c == '\\') {
+                try {
+                    c = escapes.at(line[pos++]);
+                } catch(std::out_of_range &err) {
+                    throw Err::UnexpectedTokenException(line[pos], ln, pos + 1);
+                }
+            }
+            value += c;
+        }
+        assert(line[pos] == '\"');
+        return ++pos;
+    }
+
+    int NextToken(std::string &line, int pos, int ln, Token &outToken) {
         std::string value;
-        switch(stream.peek()) {
+        switch(line[pos]) {
             case 'a': case 'b': case 'c': case 'd': case 'e':
             case 'f': case 'g': case 'h': case 'i': case 'j':
             case 'k': case 'l': case 'm': case 'n': case 'o':
@@ -79,37 +96,52 @@ namespace Xer { namespace Lex {
             case 'O': case 'P': case 'Q': case 'R': case 'S':
             case 'T': case 'U': case 'V': case 'W': case 'X':
             case 'Y': case 'Z': case '_': {
-                ReadName(stream, value);
-                return Token { NAME, value };
+                pos = ReadName(line, pos, value);
+                outToken = { NAME, value };
+                break;
             }
             case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9': {
-                ReadNumber(stream, value);
-                return Token { NUMBER, value };
+            case '5': case '6': case '7': case '8': case '9':
+            case '.': {
+                pos = ReadNumber(line, pos, ln, value);
+                outToken = { NUMBER, value };
+                break;
             }
             case '\'': {
-                ReadChar(stream, value);
-                return Token { CHARACTER, value };
+                pos = ReadChar(line, pos, ln, value);
+                outToken = { CHARACTER, value };
+                break;
             }
             case '"': {
-                ReadString(stream, value);
-                return Token { STRING, value };
+                pos = ReadString(line, pos, ln, value);
+                outToken = { STRING, value };
+                break;
             }
             default: {
-                int c = stream.get();
+                int c = line[pos++];
                 value += (char) c;
-                return Token { (TokenType) c, value };
+                outToken = { (TokenType) c, value };
+                break;
             }
         }
+        return pos;
     }
 
     std::vector<Token> Tokenize(std::ifstream &stream) {
+        std::string line;
+        Token token;
         std::vector<Token> tokens;
-        IgnoreSpaces(stream);
+        int ln = 0;
         while(!stream.eof()) {
-            Token token = NextToken(stream);
-            tokens.push_back(token);
-            IgnoreSpaces(stream);
+            std::getline(stream, line);
+            int pos = IgnoreSpaces(line, 0);
+            ln++;
+            while(pos < line.length()) {
+                pos = NextToken(line, pos, ln, token);
+                tokens.push_back(token);
+                if(pos < line.length())
+                    pos = IgnoreSpaces(line, pos);
+            }
         }
         return tokens;
     }
