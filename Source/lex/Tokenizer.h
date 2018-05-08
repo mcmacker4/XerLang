@@ -12,6 +12,7 @@
 #include <cassert>
 
 #include "../err/Exceptions.h"
+#include "../util/Util.h"
 
 namespace Xer { namespace Lex {
 
@@ -19,7 +20,8 @@ namespace Xer { namespace Lex {
         NAME = 128,
         NUMBER,
         CHARACTER,
-        STRING
+        STRING,
+        OPERATOR
     };
 
     struct Token {

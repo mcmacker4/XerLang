@@ -20,9 +20,24 @@ namespace Xer { namespace Lex {
             { '?', '\?' }
     };
 
+    std::vector<char> operators = { // NOLINT
+            // IMPORTANT TO KEEP ASCII VALUE SORTED
+            '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|'
+    };
+
     int IgnoreSpaces(std::string &line, int pos) {
         while(isspace(line[pos]))
             pos++;
+        return pos;
+    }
+
+    bool IsOperator(char c) {
+        return Util::BinSearchChar(operators, c) >= 0;
+    }
+
+    int ReadOperator(std::string &line, int pos, std::string &value) {
+        while(pos < line.length() && IsOperator(line[pos]))
+            value += line[pos++];
         return pos;
     }
 
@@ -105,6 +120,12 @@ namespace Xer { namespace Lex {
             case '.': {
                 pos = ReadNumber(line, pos, ln, value);
                 outToken = { NUMBER, value };
+                break;
+            }
+            case '!': case '%': case '&': case '*': case '+': case '-':
+            case '/': case '<': case '=': case '>': case '^': case '|': {
+                pos = ReadOperator(line, pos, value);
+                outToken = { OPERATOR, value };
                 break;
             }
             case '\'': {
