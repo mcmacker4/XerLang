@@ -20,9 +20,24 @@ namespace Xer { namespace Lex {
             { '?', '\?' }
     };
 
+    static std::vector<char> operators = { // NOLINT
+            // IMPORTANT TO KEEP ASCII VALUE SORTED
+            '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|'
+    };
+
     int IgnoreSpaces(std::string &line, int pos) {
         while(isspace(line[pos]))
             pos++;
+        return pos;
+    }
+
+    bool IsOperator(char c) {
+        return Util::BinSearchChar(operators, c) >= 0;
+    }
+
+    int ReadOperator(std::string &line, int pos, std::string &value) {
+        while(pos < line.length() && IsOperator(line[pos]))
+            value += line[pos++];
         return pos;
     }
 
@@ -101,10 +116,15 @@ namespace Xer { namespace Lex {
                 break;
             }
             case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-            case '.': {
+            case '5': case '6': case '7': case '8': case '9': {
                 pos = ReadNumber(line, pos, ln, value);
                 outToken = { NUMBER, value };
+                break;
+            }
+            case '!': case '%': case '&': case '*': case '+': case '-':
+            case '/': case '<': case '=': case '>': case '^': case '|': {
+                pos = ReadOperator(line, pos, value);
+                outToken = { OPERATOR, value };
                 break;
             }
             case '\'': {
@@ -127,10 +147,10 @@ namespace Xer { namespace Lex {
         return pos;
     }
 
-    std::vector<Token> Tokenize(std::ifstream &stream) {
-        std::string line;
+    std::queue<Token> Tokenize(std::ifstream &stream) {
         Token token;
-        std::vector<Token> tokens;
+        std::string line;
+        std::queue<Token> tokens;
         int ln = 0;
         while(!stream.eof()) {
             std::getline(stream, line);
@@ -138,7 +158,7 @@ namespace Xer { namespace Lex {
             ln++;
             while(pos < line.length()) {
                 pos = NextToken(line, pos, ln, token);
-                tokens.push_back(token);
+                tokens.push(token);
                 if(pos < line.length())
                     pos = IgnoreSpaces(line, pos);
             }

@@ -2,6 +2,8 @@
 fun main() {
     var bar: int = 358.47;
     var foo = "Hello World";
+    bar += 3;
+    foo ++.|*= "Another one bites the dust."
     var c = 'a';
     if(bar == 3) {
         print(boo);

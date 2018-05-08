@@ -5,13 +5,14 @@
 #ifndef XERINTERPRETER_TOKENIZER_H
 #define XERINTERPRETER_TOKENIZER_H
 
-#include <vector>
+#include <queue>
 #include <map>
 #include <fstream>
 #include <memory>
 #include <cassert>
 
 #include "../err/Exceptions.h"
+#include "../util/Util.h"
 
 namespace Xer { namespace Lex {
 
@@ -19,7 +20,8 @@ namespace Xer { namespace Lex {
         NAME = 128,
         NUMBER,
         CHARACTER,
-        STRING
+        STRING,
+        OPERATOR
     };
 
     struct Token {
@@ -27,7 +29,7 @@ namespace Xer { namespace Lex {
         std::string value;
     };
 
-    std::vector<Token> Tokenize(std::ifstream &stream);
+    std::queue<Token> Tokenize(std::ifstream &stream);
 
 }}
 
