@@ -12,8 +12,10 @@ int main() {
     if(stream.is_open()) {
         try {
             auto tokens = Lex::Tokenize(stream);
-            for (auto &token : tokens) {
+            while (!tokens.empty()) {
+                auto token = tokens.front();
                 std::cout << token.type << ": " << token.value << std::endl;
+                tokens.pop();
             }
         } catch (Err::UnexpectedTokenException &ex) {
             std::cout << "Unexpected Token \"" << ex.token << "\" " <<

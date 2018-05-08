@@ -20,7 +20,7 @@ namespace Xer { namespace Lex {
             { '?', '\?' }
     };
 
-    std::vector<char> operators = { // NOLINT
+    static std::vector<char> operators = { // NOLINT
             // IMPORTANT TO KEEP ASCII VALUE SORTED
             '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|'
     };
@@ -116,8 +116,7 @@ namespace Xer { namespace Lex {
                 break;
             }
             case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-            case '.': {
+            case '5': case '6': case '7': case '8': case '9': {
                 pos = ReadNumber(line, pos, ln, value);
                 outToken = { NUMBER, value };
                 break;
@@ -148,10 +147,10 @@ namespace Xer { namespace Lex {
         return pos;
     }
 
-    std::vector<Token> Tokenize(std::ifstream &stream) {
-        std::string line;
+    std::queue<Token> Tokenize(std::ifstream &stream) {
         Token token;
-        std::vector<Token> tokens;
+        std::string line;
+        std::queue<Token> tokens;
         int ln = 0;
         while(!stream.eof()) {
             std::getline(stream, line);
@@ -159,7 +158,7 @@ namespace Xer { namespace Lex {
             ln++;
             while(pos < line.length()) {
                 pos = NextToken(line, pos, ln, token);
-                tokens.push_back(token);
+                tokens.push(token);
                 if(pos < line.length())
                     pos = IgnoreSpaces(line, pos);
             }

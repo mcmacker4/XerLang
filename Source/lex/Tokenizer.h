@@ -5,7 +5,7 @@
 #ifndef XERINTERPRETER_TOKENIZER_H
 #define XERINTERPRETER_TOKENIZER_H
 
-#include <vector>
+#include <queue>
 #include <map>
 #include <fstream>
 #include <memory>
@@ -29,7 +29,7 @@ namespace Xer { namespace Lex {
         std::string value;
     };
 
-    std::vector<Token> Tokenize(std::ifstream &stream);
+    std::queue<Token> Tokenize(std::ifstream &stream);
 
 }}
 
