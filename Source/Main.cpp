@@ -15,7 +15,7 @@ int main() {
             while (!tokens.empty()) {
                 auto token = tokens.front();
                 std::cout << token.type << ": " << token.value << std::endl;
-                tokens.pop();
+                tokens.pop_front();
             }
         } catch (Err::UnexpectedTokenException &ex) {
             std::cout << "Unexpected Token \"" << ex.token << "\" " <<

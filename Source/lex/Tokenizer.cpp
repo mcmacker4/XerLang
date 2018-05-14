@@ -3,6 +3,7 @@
 //
 
 #include "Tokenizer.h"
+#include "../Constants.h"
 
 namespace Xer { namespace Lex {
 
@@ -20,35 +21,39 @@ namespace Xer { namespace Lex {
             { '?', '\?' }
     };
 
-    static std::vector<char> operators = { // NOLINT
-            // IMPORTANT TO KEEP ASCII VALUE SORTED
-            '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|'
-    };
-
-    int IgnoreSpaces(std::string &line, int pos) {
+    void IgnoreSpaces(std::string &line, int &pos) {
         while(isspace(line[pos]))
             pos++;
-        return pos;
     }
 
-    bool IsOperator(char c) {
-        return Util::BinSearchChar(operators, c) >= 0;
+    bool IsOperatorChar(char c) {
+        for(auto op : Const::opChars) {
+            if(c == op)
+                return true;
+        }
+        return false;
     }
 
-    int ReadOperator(std::string &line, int pos, std::string &value) {
-        while(pos < line.length() && IsOperator(line[pos]))
+    bool IsKeyword(String str) {
+        for(auto kw : Const::keywordList) {
+            if(str == kw)
+                return true;
+        }
+        return false;
+    }
+
+    void ReadOperator(std::string &line, int &pos, std::string &value) {
+        while(pos < line.length() && IsOperatorChar(line[pos]))
             value += line[pos++];
-        return pos;
     }
 
-    int ReadName(std::string &line, int pos, std::string &value) {
+    void ReadName(std::string &line, int &pos, std::string &value) {
         assert(isalpha(line[pos]) || line[pos] == '_');
         while(line[pos] == '_' || isalnum(line[pos]))
             value += line[pos++];
-        return pos;
     }
 
-    int ReadNumber(std::string &line, int pos, int ln, std::string &value) {
+    void ReadNumber(std::string &line, int &pos, int ln, std::string &value) {
         assert(isdigit(line[pos]) || line[pos] == '.');
         bool decimalPoint = false;
         while(pos < line.length() && (isdigit(line[pos]) || line[pos] == '.')) {
@@ -59,10 +64,9 @@ namespace Xer { namespace Lex {
             }
             value += line[pos++];
         }
-        return pos;
     }
 
-    int ReadChar(std::string &line, int pos, int ln, std::string &value) {
+    void ReadChar(std::string &line, int &pos, int ln, std::string &value) {
         assert(line[pos] == '\'');
         pos++;
         char c = line[pos++];
@@ -76,10 +80,10 @@ namespace Xer { namespace Lex {
         }
         value += c;
         assert(line[pos] == '\'');
-        return ++pos;
+        ++pos;
     }
 
-    int ReadString(std::string &line, int pos, int ln, std::string &value) {
+    void ReadString(std::string &line, int &pos, int ln, std::string &value) {
         assert(line[pos] == '\"');
         pos++;
         while(pos < line.length() && line[pos] != '\"') {
@@ -94,10 +98,10 @@ namespace Xer { namespace Lex {
             value += c;
         }
         assert(line[pos] == '\"');
-        return ++pos;
+        ++pos;
     }
 
-    int NextToken(std::string &line, int pos, int ln, Token &outToken) {
+    Token NextToken(std::string &line, int &pos, int ln) {
         std::string value;
         switch(line[pos]) {
             case 'a': case 'b': case 'c': case 'd': case 'e':
@@ -111,59 +115,68 @@ namespace Xer { namespace Lex {
             case 'O': case 'P': case 'Q': case 'R': case 'S':
             case 'T': case 'U': case 'V': case 'W': case 'X':
             case 'Y': case 'Z': case '_': {
-                pos = ReadName(line, pos, value);
-                outToken = { NAME, value };
-                break;
+                ReadName(line, pos, value);
+                String str = String(value);
+                return Token { IsKeyword(str) ? KEYWORD : NAME, str };
             }
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9': {
-                pos = ReadNumber(line, pos, ln, value);
-                outToken = { NUMBER, value };
-                break;
+                ReadNumber(line, pos, ln, value);
+                return Token { NUMBER, String(value) };
             }
             case '!': case '%': case '&': case '*': case '+': case '-':
             case '/': case '<': case '=': case '>': case '^': case '|': {
-                pos = ReadOperator(line, pos, value);
-                outToken = { OPERATOR, value };
-                break;
+                ReadOperator(line, pos, value);
+                return Token { OPERATOR, String(value) };
             }
             case '\'': {
-                pos = ReadChar(line, pos, ln, value);
-                outToken = { CHARACTER, value };
-                break;
+                ReadChar(line, pos, ln, value);
+                return Token { CHARACTER, String(value) };
             }
             case '"': {
-                pos = ReadString(line, pos, ln, value);
-                outToken = { STRING, value };
-                break;
+                ReadString(line, pos, ln, value);
+                return Token { STRING, String(value) };
             }
             default: {
                 int c = line[pos++];
                 value += (char) c;
-                outToken = { (TokenType) c, value };
-                break;
+                return Token { (TokenType) c, String(value) };
             }
         }
-        return pos;
     }
 
-    std::queue<Token> Tokenize(std::ifstream &stream) {
-        Token token;
+    std::deque<Token> Tokenize(std::ifstream &stream) {
         std::string line;
-        std::queue<Token> tokens;
+        std::deque<Token> tokens;
         int ln = 0;
         while(!stream.eof()) {
+            int pos = 0;
             std::getline(stream, line);
-            int pos = IgnoreSpaces(line, 0);
+            IgnoreSpaces(line, pos);
             ln++;
             while(pos < line.length()) {
-                pos = NextToken(line, pos, ln, token);
-                tokens.push(token);
+                Token token = NextToken(line, pos, ln);
+                tokens.push_back(token);
                 if(pos < line.length())
-                    pos = IgnoreSpaces(line, pos);
+                    IgnoreSpaces(line, pos);
             }
         }
         return tokens;
+    }
+
+    String TokenTypeToName(TokenType type) {
+        static String strings[] = {
+                "NAME",
+                "KEYWORD",
+                "NUMBER",
+                "CHARACTER",
+                "STRING",
+                "OPERATOR"
+        };
+        if(type < NAME)
+            return String(std::to_string((char) type));
+        else
+            return strings[type - NAME];
     }
 
 }}

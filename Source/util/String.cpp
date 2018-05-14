@@ -2,7 +2,7 @@
 
 namespace Util {
 
-//Constructors
+//Constructor / Destructor
 
     String::String(const char *data) {
         //String length
@@ -59,6 +59,26 @@ namespace Util {
         interns.push_back(strIntern);
         //Return StringIntern*
         return strIntern;
+    }
+
+//Operators
+
+    bool operator==(String &one, String &two) {
+        return one.Equals(two);
+    }
+
+    bool operator!=(String &one, String &two) {
+        return !one.Equals(two);
+    }
+
+    std::ostream &operator<<(std::ostream& stream, const String& string) {
+        auto intern = string.intern;
+        stream.write(intern->data, intern->length);
+        return stream;
+    }
+
+    const char *String::CStr() {
+        return intern->data;
     }
 
 }

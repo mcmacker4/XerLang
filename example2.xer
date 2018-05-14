@@ -1,0 +1,10 @@
+
+fun main() {
+    var bar: int = 358.47;
+    var foo: string = "Hello World";
+    var bee: char = 'a';
+    bar += 3;
+    if(bar == 3) {
+        print(boo);
+    }
+}

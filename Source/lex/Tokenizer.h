@@ -5,19 +5,22 @@
 #ifndef XERINTERPRETER_TOKENIZER_H
 #define XERINTERPRETER_TOKENIZER_H
 
-#include <queue>
+#include <deque>
 #include <map>
 #include <fstream>
 #include <memory>
 #include <cassert>
 
 #include "../err/Exceptions.h"
-#include "../util/Util.h"
+#include "../util/String.h"
+
+using namespace Util;
 
 namespace Xer { namespace Lex {
 
     enum TokenType {
         NAME = 128,
+        KEYWORD,
         NUMBER,
         CHARACTER,
         STRING,
@@ -26,10 +29,11 @@ namespace Xer { namespace Lex {
 
     struct Token {
         TokenType type;
-        std::string value;
+        String value;
     };
 
-    std::queue<Token> Tokenize(std::ifstream &stream);
+    std::deque<Token> Tokenize(std::ifstream &stream);
+    String TokenTypeToName(TokenType type);
 
 }}
 
